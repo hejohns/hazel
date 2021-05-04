@@ -11,6 +11,7 @@ and line =
   | CommentLine(string)
   | LetLine(UHPat.t, option(UHTyp.t), t)
   | ExpLine(opseq)
+  | StructLine(UHPat.t, unit, t)
 and opseq = OpSeq.t(operand, operator)
 and operand =
   | EmptyHole(MetaVar.t)
@@ -96,6 +97,7 @@ module Line = {
     | ExpLine(_)
     | EmptyLine
     | LetLine(_) => line
+    | StructLine(_) => line
     };
 
   let get_opseq =
@@ -103,7 +105,9 @@ module Line = {
     | EmptyLine
     | CommentLine(_)
     | LetLine(_) => None
-    | ExpLine(opseq) => Some(opseq);
+    | ExpLine(opseq) => Some(opseq)
+    | StructLine(_) => None
+    ;
   let force_get_opseq = line =>
     line
     |> get_opseq
@@ -502,6 +506,8 @@ let rec is_complete_line = (l: line, check_type_holes: bool): bool => {
     }
   | ExpLine(body) =>
     OpSeq.is_complete(is_complete_operand, body, check_type_holes)
+  | StructLine(pat, _, body) =>
+    UHPat.is_complete(pat) && is_complete(body, check_type_holes)
   };
 }
 and is_complete_block = (b: block, check_type_holes: bool): bool => {
