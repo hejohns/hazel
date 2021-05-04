@@ -12,6 +12,8 @@ and of_zline = (zline: ZExp.zline): CursorPath.t =>
   | LetLineZA(_, zann, _) => cons'(1, CursorPath_Typ.of_z(zann))
   | LetLineZE(_, _, zdef) => cons'(2, of_z(zdef))
   | ExpLineZ(zopseq) => of_zopseq(zopseq)
+  | StructLineZP(zp, _, _) => cons'(0, CursorPath_Pat.of_z(zp))
+  | StructLineZE(_, _, zdef) => cons'(1, of_z(zdef))
   }
 and of_zopseq = (zopseq: ZExp.zopseq): CursorPath.t =>
   CursorPath_common.of_zopseq_(~of_zoperand, zopseq)
@@ -69,7 +71,7 @@ and follow_line =
   switch (steps, line) {
   | (_, ExpLine(opseq)) =>
     follow_opseq(path, opseq) |> Option.map(zopseq => ZExp.ExpLineZ(zopseq))
-  | ([], EmptyLine | LetLine(_, _, _) | CommentLine(_)) =>
+  | ([], EmptyLine | LetLine(_, _, _) | CommentLine(_) | StructLine(_)) =>
     line |> ZExp.place_cursor_line(cursor)
   | ([_, ..._], EmptyLine | CommentLine(_)) => None
   | ([x, ...xs], LetLine(p, ann, def)) =>
@@ -92,6 +94,7 @@ and follow_line =
       |> Option.map(zdef => ZExp.LetLineZE(p, ann, zdef))
     | _ => None
     }
+  | (_, StructLine(_)) => failwith("to compile")
   }
 and follow_opseq =
     (path: CursorPath.t, opseq: UHExp.opseq): option(ZExp.zopseq) =>
@@ -279,6 +282,7 @@ and of_steps_line =
     | 2 => def |> of_steps(xs, ~side) |> Option.map(path => cons'(2, path))
     | _ => None
     }
+  | (_, StructLine(_)) => failwith("to compile")
   }
 and of_steps_opseq =
     (steps: CursorPath.steps, ~side: Side.t, opseq: UHExp.opseq)
@@ -461,6 +465,7 @@ and holes_line =
          ~rev_steps,
          opseq,
        )
+  | StructLine(_) => failwith("to compile")
   }
 and holes_operand =
     (
@@ -645,6 +650,9 @@ and holes_zline =
       ~holes_after,
       (),
     );
+  | StructLineZP(_) => failwith("to compile")
+  | StructLineZE(_) => failwith("to compile")
+  | _ => failwith("to compile")
   }
 and holes_zopseq =
     (zopseq: ZExp.zopseq, rev_steps: CursorPath.rev_steps)
