@@ -1918,6 +1918,7 @@ and syn_perform_operand =
     );
     Succeeded(SynDone((new_ze, ty, u_gen)));
   | (Construct(SLine), CursorE(_)) => Failed
+  | (Construct(SStruct), CursorE(_)) => Failed
 
   /* Invalid Swap actions */
   | (SwapUp | SwapDown, CursorE(_) | LamZP(_) | LamZA(_)) => Failed
@@ -3031,6 +3032,7 @@ and ana_perform_operand =
 
   /* Invalid actions at the expression level */
   | (Construct(SList), CursorE(_)) => Failed
+  | (Construct(SStruct), CursorE(_)) => Failed
 
   /* Backspace & Delete */
 
