@@ -883,6 +883,7 @@ and syn_perform_line =
       _,
       CursorL(OnDelim(_) | OnOp(_), EmptyLine) |
       CursorL(OnText(_) | OnOp(_), LetLine(_)) |
+      CursorL(OnText(_) | OnOp(_), StructLine(_)) |
       CursorL(OnOp(_), CommentLine(_)) |
       CursorL(_, ExpLine(_)),
     ) =>
@@ -966,7 +967,17 @@ and syn_perform_line =
       let new_ze = k == 3 ? def |> ZExp.place_after : def |> ZExp.place_before;
       fix_and_mk_result(u_gen, new_ze);
     }
-
+  | (Backspace, CursorL(OnDelim(k, After), StructLine(p, ann, def))) =>
+    // TODO: what do you actually want to do here??
+    switch(k) {
+    | 1 => let zp = ZPat.place_after(p);
+        let new_ze = ZExp.StructLineZP(zp, ann, def);
+        let new_zblock = ([], new_ze, []);
+        fix_and_mk_result(u_gen, new_zblock)
+    | 0 | 2 => let new_ze = ZExp.place_after(def)
+        fix_and_mk_result(u_gen, new_ze)
+    | _ => failwith("impossible")
+    }
   | (Backspace, CursorL(OnDelim(_, After), CommentLine(_))) =>
     let new_zblock = ([], ZExp.CursorL(OnText(0), EmptyLine), []);
     mk_result(u_gen, new_zblock);
@@ -1155,6 +1166,7 @@ and syn_perform_line =
       }
     };
   | (Init, _) => failwith("Init action should not be performed.")
+  | _ => failwith("to compile")
   };
 }
 and syn_perform_opseq =
@@ -2534,7 +2546,9 @@ and ana_perform_block =
         | CursorL(_)
         | LetLineZP(_)
         | LetLineZA(_)
-        | LetLineZE(_) => Failed
+        | LetLineZE(_)
+        | StructLineZP(_)
+        | StructLineZE(_) => Failed
         | ExpLineZ(zopseq) =>
           switch (ana_perform_opseq(ctx_zline, a, (zopseq, u_gen), ty)) {
           | Failed => Failed
