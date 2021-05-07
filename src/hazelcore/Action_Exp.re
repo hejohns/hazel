@@ -465,7 +465,7 @@ let syn_split_text =
       switch (kw) {
       | Let => mk_SynExpandsToLet(~u_gen, ~def=subject, ())
       | Case => mk_SynExpandsToCase(~u_gen, ~scrut=subject, ())
-      | Struct => mk_SynExpandsToStruct(~u_gen, ~body=subject, ()) // TODO:
+      | Struct => mk_SynExpandsToStruct(~u_gen, ~body=subject, ())
       },
     );
   | (lshape, Some(op), rshape) =>
@@ -660,7 +660,11 @@ let rec syn_perform =
     let zlet = ZExp.LetLineZP(ZOpSeq.wrap(zp_hole), None, subject);
     let new_ze = (prefix, zlet, suffix) |> ZExp.prune_empty_hole_lines;
     Succeeded(Statics_Exp.syn_fix_holes_z(ctx, u_gen, new_ze));
-  | Succeeded(SynExpands({kw: Struct, _})) => failwith("to compile")
+  | Succeeded(SynExpands({kw: Struct, prefix, subject, suffix, u_gen})) =>
+    let (zp_hole, u_gen) = ZPat.new_EmptyHole(u_gen);
+    let zstruct = ZExp.StructLineZP(ZOpSeq.wrap(zp_hole), (), subject);
+    let new_ze = ZExp.prune_empty_hole_lines((prefix, zstruct, suffix));
+    Succeeded(Statics_Exp.syn_fix_holes_z(ctx, u_gen, new_ze));
   };
 }
 and syn_perform_block =
@@ -1173,8 +1177,16 @@ and syn_perform_line =
         Succeeded(LineDone((([], new_zline, []), new_ctx, u_gen)));
       }
     };
+  | (_, StructLineZP(zp, ann, def)) =>
+    // TODO: what is going on here
+    Succeeded(
+      LineDone((([], ZExp.StructLineZP(zp, ann, def), []), ctx, u_gen)),
+    )
+  | (_, StructLineZE(p, ann, zdef)) =>
+    Succeeded(
+      LineDone((([], ZExp.StructLineZE(p, ann, zdef), []), ctx, u_gen)),
+    )
   | (Init, _) => failwith("Init action should not be performed.")
-  | _ => failwith("to compile")
   };
 }
 and syn_perform_opseq =
@@ -1722,6 +1734,14 @@ and syn_perform_operand =
         (),
       ),
     )
+  | (Construct(SStruct), CursorE(_, operand)) =>
+    Succeeded(
+      mk_SynExpandsToStruct(
+        ~u_gen,
+        ~body=UHExp.Block.wrap'(OpSeq.wrap(operand)),
+        (),
+      ),
+    )
 
   | (Construct(SAsc), LamZP(err, zp, None, body)) =>
     let new_zann = ZOpSeq.wrap(ZTyp.place_before_operand(Hole));
@@ -1926,7 +1946,6 @@ and syn_perform_operand =
     );
     Succeeded(SynDone((new_ze, ty, u_gen)));
   | (Construct(SLine), CursorE(_)) => Failed
-  | (Construct(SStruct), CursorE(_)) => Failed
 
   /* Invalid Swap actions */
   | (SwapUp | SwapDown, CursorE(_) | LamZP(_) | LamZA(_)) => Failed
@@ -2435,7 +2454,11 @@ and ana_perform =
     let zlet = ZExp.LetLineZP(ZOpSeq.wrap(zp_hole), None, subject);
     let new_zblock = (prefix, zlet, suffix) |> ZExp.prune_empty_hole_lines;
     Succeeded(Statics_Exp.ana_fix_holes_z(ctx, u_gen, new_zblock, ty));
-  | Succeeded(AnaExpands({kw: Struct, _})) => failwith("to compile")
+  | Succeeded(AnaExpands({kw: Struct, prefix, subject, suffix, u_gen})) =>
+    let (zp_hole, u_gen) = ZPat.new_EmptyHole(u_gen);
+    let zstruct = ZExp.StructLineZP(ZOpSeq.wrap(zp_hole), (), subject);
+    let new_zblock = (prefix, zstruct, suffix) |> ZExp.prune_empty_hole_lines;
+    Succeeded(Statics_Exp.ana_fix_holes_z(ctx, u_gen, new_zblock, ty));
   }
 and ana_perform_block =
     (

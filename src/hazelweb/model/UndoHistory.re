@@ -615,7 +615,7 @@ let get_new_action_group =
                 | OnDelim(_, _)
                 | OnOp(_) => Some(ConstructEdit(SOp(SSpace)))
                 }
-              | Struct => failwith("to compile")
+              | Struct => failwith("618 compile")
               }
             | Var(_, _, var) =>
               switch (pos) {

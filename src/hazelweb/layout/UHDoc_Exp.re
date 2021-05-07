@@ -106,7 +106,7 @@ and mk_block =
               Doc.annot(UHAnnot.OpenChild(Multiline), tl_doc),
             ),
           )
-        | StructLine(_) => failwith("to compile")
+        | StructLine(_) => failwith("109 compile")
         },
       leading,
       last_doc,
@@ -154,7 +154,7 @@ and mk_line =
                );
           let def = mk_child(~memoize, ~enforce_inline, ~child_step=2, def);
           UHDoc_common.mk_LetLine(p, ann, def);
-        | StructLine(_) => failwith("to compile")
+        | StructLine(_) => failwith("157 compile")
         }: UHDoc.t
       )
     )

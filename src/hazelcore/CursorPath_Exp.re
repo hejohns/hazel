@@ -94,7 +94,18 @@ and follow_line =
       |> Option.map(zdef => ZExp.LetLineZE(p, ann, zdef))
     | _ => None
     }
-  | (_, StructLine(_)) => failwith("to compile")
+  | ([x, ...xs], StructLine(p, ann, def)) =>
+    switch (x) {
+    | 0 =>
+      p
+      |> CursorPath_Pat.follow((xs, cursor))
+      |> Option.map(zp => ZExp.StructLineZP(zp, ann, def))
+    | 1 =>
+      def
+      |> follow((xs, cursor))
+      |> Option.map(zdef => ZExp.StructLineZE(p, ann, zdef))
+    | _ => None
+    }
   }
 and follow_opseq =
     (path: CursorPath.t, opseq: UHExp.opseq): option(ZExp.zopseq) =>
@@ -282,7 +293,7 @@ and of_steps_line =
     | 2 => def |> of_steps(xs, ~side) |> Option.map(path => cons'(2, path))
     | _ => None
     }
-  | (_, StructLine(_)) => failwith("to compile")
+  | (_, StructLine(_)) => failwith("285 compile")
   }
 and of_steps_opseq =
     (steps: CursorPath.steps, ~side: Side.t, opseq: UHExp.opseq)
@@ -465,7 +476,7 @@ and holes_line =
          ~rev_steps,
          opseq,
        )
-  | StructLine(_) => failwith("to compile")
+  | StructLine(_) => failwith("468 compile")
   }
 and holes_operand =
     (
@@ -650,9 +661,9 @@ and holes_zline =
       ~holes_after,
       (),
     );
-  | StructLineZP(_) => failwith("to compile")
-  | StructLineZE(_) => failwith("to compile")
-  | _ => failwith("to compile")
+  | StructLineZP(_) => failwith("653 compile")
+  | StructLineZE(_) => failwith("654 compile")
+  | _ => failwith("655 compile")
   }
 and holes_zopseq =
     (zopseq: ZExp.zopseq, rev_steps: CursorPath.rev_steps)

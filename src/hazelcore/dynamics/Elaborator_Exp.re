@@ -604,7 +604,7 @@ and syn_elab_line =
         }
       }
     }
-  | StructLine(_) => failwith("to compile")
+  | StructLine(_) => failwith("607 compile")
   }
 and syn_elab_opseq =
     (ctx: Contexts.t, delta: Delta.t, OpSeq(skel, seq): UHExp.opseq)

@@ -334,7 +334,7 @@ let rec evaluate = (d: DHExp.t): result =>
     | BoxedValue(d) => BoxedValue(Label_Elt(label, d))
     | Indet(d) => Indet(Label_Elt(label, d))
     }
-  | Struct(_) => failwith("to compile")
+  | Struct(_) => failwith("337 compile")
   }
 and evaluate_case =
     (

@@ -317,7 +317,7 @@ let rec mk =
         }
       | Label(label) => DHDoc_common.mk_Label(label)
       | Label_Elt(l, d) => DHDoc_common.mk_Label_Elt(l, mk_cast(go'(d)))
-      | Struct(_) => failwith("to compile")
+      | Struct(_) => failwith("320 compile")
       };
     let doc =
       parenthesize

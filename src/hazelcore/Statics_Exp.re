@@ -51,7 +51,7 @@ and syn_line = (ctx: Contexts.t, line: UHExp.line): option(Contexts.t) =>
     let (ctx_def, _) = ctx_for_let(ctx, p, ty, def);
     let* _ = ana(ctx_def, def, ty);
     Statics_Pat.ana(ctx, p, ty);
-  | StructLine(_) => failwith("to compile")
+  | StructLine(_) => failwith("54 compile")
   }
 and syn_opseq =
     (ctx: Contexts.t, OpSeq(skel, seq): UHExp.opseq): option(HTyp.t) =>
