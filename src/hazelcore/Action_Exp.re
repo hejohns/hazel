@@ -660,8 +660,7 @@ let rec syn_perform =
     let zlet = ZExp.LetLineZP(ZOpSeq.wrap(zp_hole), None, subject);
     let new_ze = (prefix, zlet, suffix) |> ZExp.prune_empty_hole_lines;
     Succeeded(Statics_Exp.syn_fix_holes_z(ctx, u_gen, new_ze));
-  | Succeeded(SynExpands({kw: Struct, _})) =>
-    failwith("to compile")
+  | Succeeded(SynExpands({kw: Struct, _})) => failwith("to compile")
   };
 }
 and syn_perform_block =
@@ -2436,8 +2435,7 @@ and ana_perform =
     let zlet = ZExp.LetLineZP(ZOpSeq.wrap(zp_hole), None, subject);
     let new_zblock = (prefix, zlet, suffix) |> ZExp.prune_empty_hole_lines;
     Succeeded(Statics_Exp.ana_fix_holes_z(ctx, u_gen, new_zblock, ty));
-  | Succeeded(AnaExpands({kw: Struct, _})) =>
-    failwith("to compile")
+  | Succeeded(AnaExpands({kw: Struct, _})) => failwith("to compile")
   }
 and ana_perform_block =
     (

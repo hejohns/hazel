@@ -50,7 +50,8 @@ let rec precedence = (~show_casts: bool, d: DHExp.t) => {
   | Let(_)
   | FixF(_)
   | ConsistentCase(_)
-  | InconsistentBranches(_) => DHDoc_common.precedence_max
+  | InconsistentBranches(_)
+  | Struct(_) => DHDoc_common.precedence_max
   | BinBoolOp(op, _, _) => precedence_bin_bool_op(op)
   | BinIntOp(op, _, _) => precedence_bin_int_op(op)
   | BinFloatOp(op, _, _) => precedence_bin_float_op(op)
@@ -316,6 +317,7 @@ let rec mk =
         }
       | Label(label) => DHDoc_common.mk_Label(label)
       | Label_Elt(l, d) => DHDoc_common.mk_Label_Elt(l, mk_cast(go'(d)))
+      | Struct(_) => failwith("to compile")
       };
     let doc =
       parenthesize

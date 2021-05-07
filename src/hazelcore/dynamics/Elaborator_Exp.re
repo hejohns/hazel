@@ -95,6 +95,14 @@ let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
   | Label_Elt(l, d) =>
     let d' = subst_var(d1, x, d);
     Label_Elt(l, d');
+  | Struct(dp, d3, d4) =>
+    let d4 =
+      if (DHPat.binds_var(x, dp)) {
+        d4;
+      } else {
+        subst_var(d1, x, d4);
+      };
+    Struct(dp, d3, d4);
   }
 and subst_var_rules =
     (d1: DHExp.t, x: Var.t, rules: list(DHExp.rule)): list(DHExp.rule) =>
@@ -330,6 +338,7 @@ and matches_cast_Inj =
   | InvalidOperation(_) => Indet
   | Label(_) => Indet
   | Label_Elt(_, _) => DoesNotMatch
+  | Struct(_) => Indet
   }
 and matches_cast_Pair =
     (
@@ -397,6 +406,7 @@ and matches_cast_Pair =
   | InvalidOperation(_) => Indet
   | Label(_) => Indet
   | Label_Elt(_, _) => DoesNotMatch // ECD TODO: Check this once doing label pattern matching
+  | Struct(_) => Indet
   }
 and matches_cast_Cons =
     (
@@ -470,6 +480,7 @@ and matches_cast_Cons =
   | InvalidOperation(_) => Indet
   | Label(_) => Indet
   | Label_Elt(_, _) => DoesNotMatch
+  | Struct(_) => Indet
   };
 
 type elab_result_lines =
@@ -593,6 +604,7 @@ and syn_elab_line =
         }
       }
     }
+  | StructLine(_) => failwith("to compile")
   }
 and syn_elab_opseq =
     (ctx: Contexts.t, delta: Delta.t, OpSeq(skel, seq): UHExp.opseq)
@@ -1502,6 +1514,9 @@ let rec renumber_result_only =
   | Label_Elt(l, d) =>
     let (d, hii) = renumber_result_only(path, hii, d);
     (Label_Elt(l, d), hii);
+  | Struct(dp, d1, d2) =>
+    let (d2, hii) = renumber_result_only(path, hii, d2);
+    (Struct(dp, d1, d2), hii);
   }
 and renumber_result_only_rules =
     (path: InstancePath.t, hii: HoleInstanceInfo.t, rules: list(DHExp.rule))
@@ -1609,6 +1624,9 @@ let rec renumber_sigmas_only =
   | Label_Elt(l, d) =>
     let (d, hii) = renumber_sigmas_only(path, hii, d);
     (Label_Elt(l, d), hii);
+  | Struct(dp, d1, d2) =>
+    let (d2, hii) = renumber_sigmas_only(path, hii, d2);
+    (Struct(dp, d1, d2), hii);
   }
 and renumber_sigmas_only_rules =
     (path: InstancePath.t, hii: HoleInstanceInfo.t, rules: list(DHExp.rule))
