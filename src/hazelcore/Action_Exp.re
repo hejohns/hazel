@@ -1091,7 +1091,12 @@ and syn_perform_line =
   | (Construct(_) | UpdateApPalette(_), CursorL(_)) => Failed
 
   /* Invalid swap actions */
-  | (SwapUp | SwapDown, CursorL(_) | LetLineZP(_) | LetLineZA(_)) => Failed
+  | (
+      SwapUp | SwapDown,
+      CursorL(_) | LetLineZP(_) | LetLineZA(_) | StructLineZP(_) |
+      StructLineZE(_),
+    ) =>
+    Failed
   | (SwapLeft, CursorL(_))
   | (SwapRight, CursorL(_)) => Failed
 
@@ -1182,13 +1187,40 @@ and syn_perform_line =
     };
   | (_, StructLineZP(zp, ann, def)) =>
     // TODO: what is going on here
-    Succeeded(
-      LineDone((([], ZExp.StructLineZP(zp, ann, def), []), ctx, u_gen)),
-    )
+    switch (Statics_Exp.syn(ctx, def)) {
+    | None => Failed
+    | Some(ty_def) =>
+      switch (Action_Pat.ana_perform(ctx, u_gen, a, zp, ty_def)) {
+      | Failed => Failed
+      | CursorEscaped(side) => escape(u_gen, side)
+      | Succeeded((new_zp, new_ctx, u_gen)) =>
+        let (new_def, _, u_gen) = Statics_Exp.syn_fix_holes(ctx, u_gen, def);
+        Succeeded(
+          LineDone((
+            ([], ZExp.StructLineZP(new_zp, ann, new_def), []),
+            new_ctx,
+            u_gen,
+          )),
+        );
+      }
+    }
   | (_, StructLineZE(p, ann, zdef)) =>
-    Succeeded(
-      LineDone((([], ZExp.StructLineZE(p, ann, zdef), []), ctx, u_gen)),
-    )
+    switch (Statics_Exp.syn(ctx, ZExp.erase(zdef))) {
+    | None => Failed
+    | Some(def_ty) =>
+      switch (syn_perform(ctx, a, (zdef, def_ty, u_gen))) {
+      | Failed => Failed
+      | CursorEscaped(side) => escape(u_gen, side)
+      | Succeeded((new_zdef, _, u_gen)) =>
+        Succeeded(
+          LineDone((
+            ([], ZExp.StructLineZE(p, ann, new_zdef), []),
+            ctx,
+            u_gen,
+          )),
+        )
+      }
+    }
   | (Init, _) => failwith("Init action should not be performed.")
   };
 }
