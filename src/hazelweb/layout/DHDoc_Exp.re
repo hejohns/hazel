@@ -317,7 +317,27 @@ let rec mk =
         }
       | Label(label) => DHDoc_common.mk_Label(label)
       | Label_Elt(l, d) => DHDoc_common.mk_Label_Elt(l, mk_cast(go'(d)))
-      | Struct(_) => failwith("320 compile")
+      | Struct(dp, _, ddef) =>
+        let def_doc = (~enforce_inline) =>
+          mk_cast(go(~enforce_inline, ddef));
+        vseps([
+          hcats([
+            DHDoc_common.Delim.mk("module"),
+            DHDoc_Pat.mk(dp)
+            |> DHDoc_common.pad_child(
+                 ~inline_padding=(space(), space()),
+                 ~enforce_inline,
+               ),
+            DHDoc_common.Delim.mk("= {"),
+            def_doc
+            |> DHDoc_common.pad_child(
+                 ~inline_padding=(space(), space()),
+                 ~enforce_inline=false,
+               ),
+            DHDoc_common.Delim.mk("}"),
+          ]),
+          mk_cast(go(~enforce_inline=false, ddef)),
+        ]);
       };
     let doc =
       parenthesize

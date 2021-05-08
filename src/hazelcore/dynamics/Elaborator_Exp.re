@@ -607,11 +607,11 @@ and syn_elab_line =
   | StructLine(p, _, def) =>
     switch (syn_elab(ctx, delta, def)) {
     | DoesNotElaborate => LinesDoNotExpand
-    | Elaborates(d1, ty1, delta) =>
+    | Elaborates(_, ty1, delta) =>
       switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
       | DoesNotElaborate => LinesDoNotExpand
       | Elaborates(dp, _, ctx, delta) =>
-        let prelude = d2 => DHExp.Let(dp, d1, d2);
+        let prelude = d2 => DHExp.Struct(dp, (), d2);
         LinesExpand(prelude, ctx, delta);
       }
     }

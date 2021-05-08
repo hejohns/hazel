@@ -109,7 +109,10 @@ exception InvalidInput;
 let evaluate = Memo.general(~cache_size_bound=1000, Evaluator.evaluate);
 let get_result = (program: t): Result.t =>
   switch (program |> get_expansion |> evaluate) {
-  | InvalidInput(_) => raise(InvalidInput)
+  | InvalidInput(_) as ii =>
+    print_endline("Input:");
+    ii |> Evaluator.sexp_of_result |> string_of_sexp |> print_endline;
+    raise(InvalidInput);
   | BoxedValue(d) =>
     let (d_renumbered, hii) =
       Elaborator_Exp.renumber([], HoleInstanceInfo.empty, d);
@@ -164,7 +167,7 @@ let perform_edit_action = (a, program) => {
   switch (Action_Exp.syn_perform(Contexts.empty, a, edit_state)) {
   | Failed =>
     print_endline("action:");
-    print_endline(string_of_sexp(Action.sexp_of_t(a)));
+    a |> Action.sexp_of_t |> string_of_sexp |> print_endline;
     raise(FailedAction);
   | CursorEscaped(_) => raise(CursorEscaped)
   | Succeeded(new_edit_state) =>
