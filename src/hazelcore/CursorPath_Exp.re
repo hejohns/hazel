@@ -476,7 +476,10 @@ and holes_line =
          ~rev_steps,
          opseq,
        )
-  | StructLine(_) => failwith("468 compile")
+  | StructLine(p, _, def) =>
+    hs
+    |> holes(def, [1, ...rev_steps])
+    |> CursorPath_Pat.holes(p, [0, ...rev_steps])
   }
 and holes_operand =
     (

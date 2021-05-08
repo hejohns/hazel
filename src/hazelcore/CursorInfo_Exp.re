@@ -343,7 +343,15 @@ and syn_cursor_info_line =
       ana_cursor_info(~steps=steps @ [2], ctx_def, zdef, ty)
       |> Option.map(ci => CursorInfo_common.CursorNotOnDeferredVarPat(ci));
     }
-  | _ => failwith("TODO: no idea what's going on")
+  | StructLineZP(zp, _, def) =>
+    let pat_ci = CursorInfo_Pat.ana_cursor_info(~steps=steps @ [0], ctx, zp);
+    switch (Statics_Exp.syn(ctx, def)) {
+    | None => None
+    | Some(ty1) => pat_ci(ty1)
+    };
+  | StructLineZE(_, _, zdef) =>
+    syn_cursor_info(~steps=steps @ [1], ctx, zdef)
+    |> Option.map(ci => CursorInfo_common.CursorNotOnDeferredVarPat(ci))
   }
 and syn_cursor_info_zopseq =
     (
@@ -669,7 +677,7 @@ and ana_cursor_info_zblock =
           zopseq,
           ty,
         )
-      | _ => failwith("TODO: no idea what's going on")
+      | _ => failwith("TODO: 672 idea what's going on")
       }
     | [_, ..._] =>
       switch (

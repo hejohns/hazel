@@ -393,6 +393,41 @@ let mk_LetLine =
   ]);
 };
 
+let mk_StructLine =
+    (p: formatted_child, ann: option(formatted_child), def: formatted_child)
+    : t => {
+  let open_group = {
+    let let_delim = Delim.let_LetLine();
+    let eq_delim = Delim.eq_LetLine();
+    let doc =
+      switch (ann) {
+      | None =>
+        Doc.hcats([
+          let_delim,
+          p |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Pat),
+          eq_delim,
+        ])
+      | Some(ann) =>
+        let colon_delim = Delim.colon_LetLine();
+        Doc.hcats([
+          let_delim,
+          p |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Pat),
+          colon_delim,
+          ann
+          |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Typ),
+          eq_delim,
+        ]);
+      };
+    doc |> annot_Tessera;
+  };
+  let close_group = Delim.in_LetLine() |> annot_Tessera;
+  Doc.hcats([
+    open_group,
+    def |> pad_bidelimited_open_child(~inline_padding=(space_, space_)),
+    close_group,
+  ]);
+};
+
 let pad_operator =
     (~inline_padding as (left, right): (t, t), operator: t): t => {
   open Doc;

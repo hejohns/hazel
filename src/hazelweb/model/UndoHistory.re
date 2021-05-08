@@ -615,7 +615,17 @@ let get_new_action_group =
                 | OnDelim(_, _)
                 | OnOp(_) => Some(ConstructEdit(SOp(SSpace)))
                 }
-              | Struct => failwith("618 compile")
+              | Struct =>
+                switch (
+                  UndoHistoryCore.get_cursor_pos(
+                    new_cursor_term_info.cursor_term_before,
+                  )
+                ) {
+                | OnText(pos) =>
+                  Some(ConstructEdit(pos == 2 ? SStruct : SOp(SSpace)))
+                | OnDelim(_)
+                | OnOp(_) => Some(ConstructEdit(SOp(SSpace)))
+                }
               }
             | Var(_, _, var) =>
               switch (pos) {

@@ -845,7 +845,7 @@ and syn_perform_block =
           switch (
             Statics_Exp.syn_block(ctx_zline, zblock |> ZExp.erase_zblock)
           ) {
-          | None => 
+          | None =>
             // ECD: PROJECTION CREATION FAILS HERE!!!
             Failed
           | Some(new_ty) =>
@@ -981,13 +981,16 @@ and syn_perform_line =
     }
   | (Backspace, CursorL(OnDelim(k, After), StructLine(p, ann, def))) =>
     // TODO: what do you actually want to do here??
-    switch(k) {
-    | 1 => let zp = ZPat.place_after(p);
-        let new_ze = ZExp.StructLineZP(zp, ann, def);
-        let new_zblock = ([], new_ze, []);
-        fix_and_mk_result(u_gen, new_zblock)
-    | 0 | 2 => let new_ze = ZExp.place_after(def)
-        fix_and_mk_result(u_gen, new_ze)
+    switch (k) {
+    | 1 =>
+      let zp = ZPat.place_after(p);
+      let new_ze = ZExp.StructLineZP(zp, ann, def);
+      let new_zblock = ([], new_ze, []);
+      fix_and_mk_result(u_gen, new_zblock);
+    | 0
+    | 2 =>
+      let new_ze = ZExp.place_after(def);
+      fix_and_mk_result(u_gen, new_ze);
     | _ => failwith("impossible")
     }
   | (Backspace, CursorL(OnDelim(_, After), CommentLine(_))) =>

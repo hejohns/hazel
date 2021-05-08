@@ -663,10 +663,12 @@ and syn_fix_holes_line =
       (LetLine(p, ann, def), ctx, u_gen);
     }
   | StructLine(p, ann, def) =>
-      // TODO: no idea what this is supposed to do
-      let (def, ty1, u_gen) = syn_fix_holes(~renumber_empty_holes, ctx, u_gen, def);
-      let (p, ctx, u_gen) = Statics_Pat.ana_fix_holes(ctx, u_gen, ~renumber_empty_holes, p, ty1);
-      (StructLine(p, ann, def), ctx, u_gen)
+    // TODO: 666 idea what this is supposed to do
+    let (def, ty1, u_gen) =
+      syn_fix_holes(~renumber_empty_holes, ctx, u_gen, def);
+    let (p, ctx, u_gen) =
+      Statics_Pat.ana_fix_holes(ctx, u_gen, ~renumber_empty_holes, p, ty1);
+    (StructLine(p, ann, def), ctx, u_gen);
   }
 and syn_fix_holes_opseq =
     (

@@ -604,7 +604,17 @@ and syn_elab_line =
         }
       }
     }
-  | StructLine(_) => failwith("607 compile")
+  | StructLine(p, _, def) =>
+    switch (syn_elab(ctx, delta, def)) {
+    | DoesNotElaborate => LinesDoNotExpand
+    | Elaborates(d1, ty1, delta) =>
+      switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
+      | DoesNotElaborate => LinesDoNotExpand
+      | Elaborates(dp, _, ctx, delta) =>
+        let prelude = d2 => DHExp.Let(dp, d1, d2);
+        LinesExpand(prelude, ctx, delta);
+      }
+    }
   }
 and syn_elab_opseq =
     (ctx: Contexts.t, delta: Delta.t, OpSeq(skel, seq): UHExp.opseq)
