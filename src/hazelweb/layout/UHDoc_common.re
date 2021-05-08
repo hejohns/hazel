@@ -397,30 +397,19 @@ let mk_StructLine =
     (p: formatted_child, ann: option(formatted_child), def: formatted_child)
     : t => {
   let open_group = {
-    let let_delim = Delim.let_LetLine();
-    let eq_delim = Delim.eq_LetLine();
     let doc =
       switch (ann) {
       | None =>
         Doc.hcats([
-          let_delim,
+          Delim.mk(~index=0, "module"),
           p |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Pat),
-          eq_delim,
+          Delim.mk(~index=1, "= {"),
         ])
-      | Some(ann) =>
-        let colon_delim = Delim.colon_LetLine();
-        Doc.hcats([
-          let_delim,
-          p |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Pat),
-          colon_delim,
-          ann
-          |> pad_closed_child(~inline_padding=(space_, space_), ~sort=Typ),
-          eq_delim,
-        ]);
+      | _ => failwith("not implemented")
       };
     doc |> annot_Tessera;
   };
-  let close_group = Delim.in_LetLine() |> annot_Tessera;
+  let close_group = Delim.mk(~index=2, "} in") |> annot_Tessera;
   Doc.hcats([
     open_group,
     def |> pad_bidelimited_open_child(~inline_padding=(space_, space_)),
