@@ -51,7 +51,9 @@ and syn_line = (ctx: Contexts.t, line: UHExp.line): option(Contexts.t) =>
     let (ctx_def, _) = ctx_for_let(ctx, p, ty, def);
     let* _ = ana(ctx_def, def, ty);
     Statics_Pat.ana(ctx, p, ty);
-  | StructLine(_) => failwith("54 compile")
+  | StructLine(_) => None // TODO: this is quite tricky for structs
+  // we don't want to ana def against ctx directly
+  // we need to inject a prod in def (in elaborator?)
   }
 and syn_opseq =
     (ctx: Contexts.t, OpSeq(skel, seq): UHExp.opseq): option(HTyp.t) =>

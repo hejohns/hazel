@@ -162,7 +162,10 @@ exception CursorEscaped;
 let perform_edit_action = (a, program) => {
   let edit_state = program.edit_state;
   switch (Action_Exp.syn_perform(Contexts.empty, a, edit_state)) {
-  | Failed => raise(FailedAction)
+  | Failed =>
+    print_endline("action:");
+    print_endline(string_of_sexp(Action.sexp_of_t(a)));
+    raise(FailedAction);
   | CursorEscaped(_) => raise(CursorEscaped)
   | Succeeded(new_edit_state) =>
     print_endline("In succed state :)");
