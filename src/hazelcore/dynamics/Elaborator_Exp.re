@@ -605,6 +605,8 @@ and syn_elab_line =
       }
     }
   | StructLine(p, _, def) =>
+    // TODO (hejohns): this is where we inject the record (I think...)
+    // see Program.re:111 -> 99
     switch (syn_elab(ctx, delta, def)) {
     | DoesNotElaborate => LinesDoNotExpand
     | Elaborates(_, ty1, delta) =>

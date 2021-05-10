@@ -268,7 +268,7 @@ and of_steps_line =
     : option(CursorPath.t) =>
   switch (steps, line) {
   | (_, ExpLine(opseq)) => of_steps_opseq(steps, ~side, opseq)
-  | ([], EmptyLine | LetLine(_, _, _) | CommentLine(_)) =>
+  | ([], EmptyLine | LetLine(_, _, _) | StructLine(_) | CommentLine(_)) =>
     let place_cursor =
       switch (side) {
       | Before => ZExp.place_before_line
@@ -293,7 +293,15 @@ and of_steps_line =
     | 2 => def |> of_steps(xs, ~side) |> Option.map(path => cons'(2, path))
     | _ => None
     }
-  | (_, StructLine(_)) => failwith("285 compile")
+  | ([x, ...xs], StructLine(p, _, def)) =>
+    switch (x) {
+    | 0 =>
+      p
+      |> CursorPath_Pat.of_steps(xs, ~side)
+      |> Option.map(path => cons'(0, path))
+    | 1 => def |> of_steps(xs, ~side) |> Option.map(path => cons'(1, path))
+    | _ => None
+    }
   }
 and of_steps_opseq =
     (steps: CursorPath.steps, ~side: Side.t, opseq: UHExp.opseq)
@@ -622,6 +630,23 @@ and holes_zline =
       )
     | _ => CursorPath_common.no_holes
     };
+  | CursorL(cursor, StructLine(p, _, def)) =>
+    // TODO (hejohns): only a vague idea of what's going on
+    let holes_p = CursorPath_Pat.holes(p, [0, ...rev_steps], []);
+    let holes_def = holes(def, [1, ...rev_steps], []);
+    switch (cursor) {
+    | OnDelim(0, _) =>
+      CursorPath_common.mk_zholes(~holes_after=holes_p @ holes_def, ())
+    | OnDelim(1, _) =>
+      CursorPath_common.mk_zholes(
+        ~holes_before=holes_p,
+        ~holes_after=holes_def,
+        (),
+      )
+    | OnDelim(2, _) =>
+      CursorPath_common.mk_zholes(~holes_before=holes_p @ holes_def, ())
+    | _ => CursorPath_common.no_holes
+    };
   | ExpLineZ(zopseq) => holes_zopseq(zopseq, rev_steps)
   | LetLineZP(zp, ann, body) =>
     let CursorPath.{holes_before, hole_selected, holes_after} =
@@ -664,9 +689,27 @@ and holes_zline =
       ~holes_after,
       (),
     );
-  | StructLineZP(_) => failwith("653 compile")
-  | StructLineZE(_) => failwith("654 compile")
-  | _ => failwith("655 compile")
+  | StructLineZP(zp, _, def) =>
+    // TODO (hejohns): idk
+    let CursorPath.{holes_before, hole_selected, holes_after} =
+      CursorPath_Pat.holes_z(zp, [0, ...rev_steps]);
+    let holes_def = holes(def, [1, ...rev_steps], []);
+    CursorPath_common.mk_zholes(
+      ~holes_before,
+      ~hole_selected,
+      ~holes_after=holes_after @ holes_def,
+      (),
+    );
+  | StructLineZE(p, _, zdef) =>
+    let holes_p = CursorPath_Pat.holes(p, [0, ...rev_steps], []);
+    let CursorPath.{holes_before, hole_selected, holes_after} =
+      holes_z(zdef, [1, ...rev_steps]);
+    CursorPath_common.mk_zholes(
+      ~holes_before=holes_p @ holes_before,
+      ~hole_selected,
+      ~holes_after,
+      (),
+    );
   }
 and holes_zopseq =
     (zopseq: ZExp.zopseq, rev_steps: CursorPath.rev_steps)
