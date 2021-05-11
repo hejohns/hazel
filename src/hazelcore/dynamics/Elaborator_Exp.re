@@ -1,3 +1,5 @@
+//open Sexplib.Std;
+
 /* closed substitution [d1/x]d2*/
 let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
   switch (d2) {
@@ -610,27 +612,44 @@ and syn_elab_line =
   | StructLine(p, _, def) =>
     // TODO (hejohns): this is where we inject the record (I think...)
     // see Program.re:111 -> 99
-    let rec mk_struct_def =
-            (~acc: list(Var.t)=[], def: UHExp.block): option(UHExp.block) =>
+    let rec mk_struct_record =
+            (~acc: list(Var.t)=[], def: UHExp.block): option(UHExp.line) =>
       switch (def) {
       | [] =>
         if (List.length(acc) > 0) {
-          Some(def @ [UHExp.mk_struct_record(acc)]);
+          Some(UHExp.mk_struct_record(acc));
         } else {
           None;
         }
       | [LetLine(p, _, _), ...tl] =>
         switch (p) {
         | OpSeq(_, S(Var(_, NotInVarHole, x), E)) =>
-          mk_struct_def(~acc=acc @ [x], tl)
+          mk_struct_record(~acc=acc @ [x], tl)
         | _ => None
         }
       | _ => None
       };
-    switch (mk_struct_def(def)) {
-    | None => LinesDoNotExpand
-    | Some(def) =>
+    switch (mk_struct_record(def)) {
+    | None =>
+      /*
+       def
+       |> sexp_of_list(UHExp.sexp_of_line)
+       |> string_of_sexp
+       |> print_endline;
+       LinesDoNotExpand;
+       */
       switch (syn_elab(ctx, delta, def)) {
+      | DoesNotElaborate => LinesDoNotExpand
+      | Elaborates(_, ty1, delta) =>
+        switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
+        | DoesNotElaborate => LinesDoNotExpand
+        | Elaborates(dp, _, ctx, delta) =>
+          let prelude = d2 => DHExp.Struct(dp, (), d2);
+          LinesExpand(prelude, ctx, delta);
+        }
+      }
+    | Some(record) =>
+      switch (syn_elab(ctx, delta, def @ [record])) {
       | DoesNotElaborate => LinesDoNotExpand
       | Elaborates(_, ty1, delta) =>
         switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
