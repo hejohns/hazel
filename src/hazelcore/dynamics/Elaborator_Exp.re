@@ -12,6 +12,7 @@ let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
   | Label(_) => d2
   | Keyword(_) => d2
   | Let(dp, d3, d4) =>
+    // TODO (hejohns): ?
     let d3 = subst_var(d1, x, d3);
     let d4 =
       if (DHPat.binds_var(x, dp)) {
@@ -96,8 +97,10 @@ let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
     let d' = subst_var(d1, x, d);
     Label_Elt(l, d');
   | Struct(dp, d3, d4) =>
+    // TODO (hejohns): ?
     let d4 =
       if (DHPat.binds_var(x, dp)) {
+        // dp shadows x
         d4;
       } else {
         subst_var(d1, x, d4);
@@ -607,16 +610,37 @@ and syn_elab_line =
   | StructLine(p, _, def) =>
     // TODO (hejohns): this is where we inject the record (I think...)
     // see Program.re:111 -> 99
-    switch (syn_elab(ctx, delta, def)) {
-    | DoesNotElaborate => LinesDoNotExpand
-    | Elaborates(_, ty1, delta) =>
-      switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
+    let rec mk_struct_def =
+            (~acc: list(Var.t)=[], def: UHExp.block): option(UHExp.block) =>
+      switch (def) {
+      | [] =>
+        if (List.length(acc) > 0) {
+          Some(def @ [UHExp.mk_struct_record(acc)]);
+        } else {
+          None;
+        }
+      | [LetLine(p, _, _), ...tl] =>
+        switch (p) {
+        | OpSeq(_, S(Var(_, NotInVarHole, x), E)) =>
+          mk_struct_def(~acc=acc @ [x], tl)
+        | _ => None
+        }
+      | _ => None
+      };
+    switch (mk_struct_def(def)) {
+    | None => LinesDoNotExpand
+    | Some(def) =>
+      switch (syn_elab(ctx, delta, def)) {
       | DoesNotElaborate => LinesDoNotExpand
-      | Elaborates(dp, _, ctx, delta) =>
-        let prelude = d2 => DHExp.Struct(dp, (), d2);
-        LinesExpand(prelude, ctx, delta);
+      | Elaborates(_, ty1, delta) =>
+        switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
+        | DoesNotElaborate => LinesDoNotExpand
+        | Elaborates(dp, _, ctx, delta) =>
+          let prelude = d2 => DHExp.Struct(dp, (), d2);
+          LinesExpand(prelude, ctx, delta);
+        }
       }
-    }
+    };
   }
 and syn_elab_opseq =
     (ctx: Contexts.t, delta: Delta.t, OpSeq(skel, seq): UHExp.opseq)

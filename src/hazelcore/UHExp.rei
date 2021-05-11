@@ -80,6 +80,8 @@ module Block: {
   let split_conclusion: block => option((list(line), opseq));
 };
 
+let mk_struct_record: list(Var.t) => line;
+
 let get_tuple_elements: skel => list(skel);
 
 let get_projected_skel: (list(skel), seq, Label.t) => option(skel);

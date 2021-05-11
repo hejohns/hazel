@@ -182,6 +182,20 @@ let rec mk_tuple = (~err: ErrStatus.t=NotInHole, elements: list(skel)): skel =>
   | [skel, ...skels] => BinOp(err, Comma, skel, mk_tuple(skels))
   };
 
+let mk_struct_record = (l: list(Var.t)): line =>
+  switch (l) {
+  | [] => failwith("expected at least one element")
+  | [x, ...tl] =>
+    let seq_tl =
+      List.combine(
+        List.map(_ => Operators_Exp.Comma, tl),
+        List.map(x => Var(NotInHole, NotInVarHole, x), tl),
+      );
+    let seq = Seq.mk(Var(NotInHole, NotInVarHole, x), seq_tl);
+    let skel = Skel.mk(_ => 1, _ => Right, seq);
+    ExpLine(OpSeq(skel, seq));
+  };
+
 let rec set_duplicate_tuple_labels =
         (
           elements: list(skel),
