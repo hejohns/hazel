@@ -111,7 +111,7 @@ let get_result = (program: t): Result.t =>
   switch (program |> get_expansion |> evaluate) {
   | InvalidInput(_) as ii =>
     print_endline("Input:");
-    ii |> Evaluator.sexp_of_result |> string_of_sexp |> print_endline;
+    ii |> Evaluator.sexp_of_result |> Sexplib.Sexp.to_string |> print_endline;
     raise(InvalidInput);
   | BoxedValue(d) =>
     let (d_renumbered, hii) =
@@ -167,7 +167,7 @@ let perform_edit_action = (a, program) => {
   switch (Action_Exp.syn_perform(Contexts.empty, a, edit_state)) {
   | Failed =>
     print_endline("action:");
-    a |> Action.sexp_of_t |> string_of_sexp |> print_endline;
+    a |> Action.sexp_of_t |> Sexplib.Sexp.to_string |> print_endline;
     raise(FailedAction);
   | CursorEscaped(_) => raise(CursorEscaped)
   | Succeeded(new_edit_state) =>

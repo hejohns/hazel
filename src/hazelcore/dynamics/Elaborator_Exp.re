@@ -538,7 +538,13 @@ and syn_elab_block =
     | LinesExpand(prelude, ctx, delta) =>
       switch (syn_elab_opseq(ctx, delta, conclusion)) {
       | DoesNotElaborate => DoesNotElaborate
-      | Elaborates(d, ty, delta) => Elaborates(prelude(d), ty, delta)
+      | Elaborates(d, ty, delta) =>
+        d
+        |> prelude
+        |> DHExp.sexp_of_t
+        |> Sexplib.Sexp.to_string
+        |> print_endline;
+        Elaborates(prelude(d), ty, delta);
       }
     }
   }
@@ -594,6 +600,11 @@ and syn_elab_line =
         | DoesNotElaborate => LinesDoNotExpand
         | Elaborates(dp, _, ctx, delta) =>
           let prelude = d2 => DHExp.Let(dp, d1, d2);
+          DHExp.BoundVar("MISSING")
+          |> prelude
+          |> DHExp.sexp_of_t
+          |> Sexplib.Sexp.to_string
+          |> print_endline;
           LinesExpand(prelude, ctx, delta);
         };
       };
@@ -605,6 +616,11 @@ and syn_elab_line =
         | DoesNotElaborate => LinesDoNotExpand
         | Elaborates(dp, _, ctx, delta) =>
           let prelude = d2 => DHExp.Let(dp, d1, d2);
+          DHExp.BoundVar("MISSING")
+          |> prelude
+          |> DHExp.sexp_of_t
+          |> Sexplib.Sexp.to_string
+          |> print_endline;
           LinesExpand(prelude, ctx, delta);
         }
       }
@@ -634,7 +650,7 @@ and syn_elab_line =
       /*
        def
        |> sexp_of_list(UHExp.sexp_of_line)
-       |> string_of_sexp
+       |> Sexplib.Sexp.to_string
        |> print_endline;
        LinesDoNotExpand;
        */

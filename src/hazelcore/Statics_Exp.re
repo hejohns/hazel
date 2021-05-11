@@ -1,4 +1,4 @@
-open Sexplib.Std;
+//open Sexplib.Std;
 open OptUtil.Syntax;
 
 let tuple_zip =
@@ -54,7 +54,7 @@ and syn_line = (ctx: Contexts.t, line: UHExp.line): option(Contexts.t) =>
     Statics_Pat.ana(ctx, p, ty);
   | StructLine(_) =>
     print_endline("context: ");
-    ctx |> Contexts.sexp_of_t |> string_of_sexp |> print_endline;
+    ctx |> Contexts.sexp_of_t |> Sexplib.Sexp.to_string |> print_endline;
     None; // TODO: this is quite tricky for structs
   // we don't want to ana def against ctx directly
   // we need to inject a prod in def (in elaborator?)
