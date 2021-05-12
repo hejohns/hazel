@@ -1,4 +1,4 @@
-open Sexplib.Std;
+//open Sexplib.Std;
 
 /* closed substitution [d1/x]d2*/
 let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
@@ -625,33 +625,12 @@ and syn_elab_line =
         }
       }
     }
-  | StructLine(p, _, def) =>
+  | StructLine(_) as strct =>
     // TODO (hejohns): this is where we inject the record
     // see Program.re:111 -> 99
-    switch (UHExp.extract_vars(def)) {
+    switch (UHExp.desugar_struct(strct)) {
     | None => LinesExpand(d => d, ctx, delta)
-    | Some(vars) =>
-      if (List.length(def) > 0) {
-        let pre = def |> List.rev |> List.tl |> List.rev;
-        vars
-        |> sexp_of_list(sexp_of_string)
-        |> Sexplib.Sexp.to_string
-        |> print_endline;
-        assert(List.length(vars) > 0);
-        "###641###" |> print_endline;
-        let r = UHExp.mk_struct_record(vars);
-        "pre: " |> print_endline;
-        pre
-        |> sexp_of_list(UHExp.sexp_of_line)
-        |> Sexplib.Sexp.to_string
-        |> print_endline;
-        "r: " |> print_endline;
-        r |> UHExp.sexp_of_line |> Sexplib.Sexp.to_string |> print_endline;
-        let m = UHExp.LetLine(p, None, pre @ [r]);
-        syn_elab_line(ctx, delta, m);
-      } else {
-        LinesDoNotExpand;
-      }
+    | Some(strct_as_let) => syn_elab_line(ctx, delta, strct_as_let)
     }
   }
 and syn_elab_opseq =
