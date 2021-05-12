@@ -36,6 +36,7 @@ let shape_to_string = (shape: shape): string => {
     | SOr => "||"
     }
   | SApPalette(_) => failwith("ApPalette not implemented")
+  | SStruct => "struct line"
   };
 };
 

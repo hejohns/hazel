@@ -75,6 +75,7 @@ let keyword_action = (kw: ExpandingKeyword.t): Action.t =>
   | Let => Construct(SLet)
   | Case => Construct(SCase)
   | TyAlias => Construct(STyAlias)
+  | Struct => Construct(SStruct)
   };
 
 //TBD
@@ -244,6 +245,9 @@ let mk_SynExpandsToTyAlias = (~u_gen, ~prefix=[], ~suffix=[], ()) => {
     subject: [UHExp.ExpLine(UHExp.EmptyHole(u) |> OpSeq.wrap)],
   });
 };
+// TODO (hejohns): ?
+let mk_SynExpandsToStruct = (~u_gen, ~prefix=[], ~suffix=[], ~def, ()) =>
+  SynExpands({kw: Struct, u_gen, prefix, suffix, subject: def});
 let wrap_in_SynDone:
   ActionOutcome.t(syn_done) => ActionOutcome.t(syn_success) =
   fun
@@ -270,6 +274,9 @@ let mk_AnaExpandsToTyAlias = (~u_gen, ~prefix=[], ~suffix=[], ()) => {
   });
 };
 
+// TODO (hejohns): ?
+let mk_AnaExpandsToStruct = (~u_gen, ~prefix=[], ~suffix=[], ~def, ()) =>
+  AnaExpands({kw: Struct, u_gen, prefix, suffix, subject: def});
 let wrap_in_AnaDone:
   ActionOutcome.t(ana_done) => ActionOutcome.t(ana_success) =
   fun
@@ -440,6 +447,7 @@ let syn_split_text =
       | Let => mk_SynExpandsToLet(~u_gen, ~def=subject, ())
       | Case => mk_SynExpandsToCase(~u_gen, ~scrut=subject, ())
       | TyAlias => mk_SynExpandsToTyAlias(~u_gen, ())
+      | Struct => mk_SynExpandsToStruct(~u_gen, ~def=subject, ())
       },
     );
   | (lshape, Some(op), rshape) =>
@@ -481,6 +489,7 @@ let ana_split_text =
       | Let => mk_AnaExpandsToLet(~u_gen, ~def=subject, ())
       | Case => mk_AnaExpandsToCase(~u_gen, ~scrut=subject, ())
       | TyAlias => mk_AnaExpandsToTyAlias(~u_gen, ())
+      | Struct => mk_AnaExpandsToStruct(~u_gen, ~def=subject, ())
       },
     );
   | (lshape, Some(op), rshape) =>
@@ -644,6 +653,10 @@ let rec syn_perform =
         OpSeq.wrap(UHTyp.Hole(u)),
       );
     let new_ze = (prefix, zalias, suffix) |> ZExp.prune_empty_hole_lines;
+  | Succeeded(SynExpands({kw: Struct, prefix, subject, suffix, u_gen})) =>
+    let (zp_hole, u_gen) = ZPat.new_EmptyHole(u_gen);
+    let zstruct = ZExp.StructLineZP(ZOpSeq.wrap(zp_hole), (), subject);
+    let new_ze = ZExp.prune_empty_hole_lines((prefix, zstruct, suffix));
     Succeeded(Statics_Exp.syn_fix_holes_z(ctx, u_gen, new_ze));
   };
 }
@@ -869,7 +882,7 @@ and syn_perform_line =
   | (
       _,
       CursorL(OnDelim(_) | OnOp(_), EmptyLine) |
-      CursorL(OnText(_) | OnOp(_), LetLine(_) | TyAliasLine(_)) |
+      CursorL(OnText(_) | OnOp(_), LetLine(_) | TyAliasLine(_) | StructLine(_)) |
       CursorL(OnOp(_), CommentLine(_)) |
       CursorL(_, ExpLine(_)),
     ) =>
@@ -964,6 +977,19 @@ and syn_perform_line =
       let zty = k == 2 ? ty |> ZTyp.place_after : ty |> ZTyp.place_before;
       let new_zblock = ([], ZExp.TyAliasLineT(p, zty), []);
       fix_and_mk_result(u_gen, new_zblock);
+  | (Backspace, CursorL(OnDelim(k, After), StructLine(p, ann, def))) =>
+    // TODO (hejohns): what do you actually want to do here??
+    switch (k) {
+    | 1 =>
+      let zp = ZPat.place_after(p);
+      let new_ze = ZExp.StructLineZP(zp, ann, def);
+      let new_zblock = ([], new_ze, []);
+      fix_and_mk_result(u_gen, new_zblock);
+    | 0
+    | 2 =>
+      let new_ze = ZExp.place_after(def);
+      fix_and_mk_result(u_gen, new_ze);
+    | _ => failwith("impossible")
     }
   | (Backspace, CursorL(OnDelim(_, After), CommentLine(_))) =>
     let new_zblock = ([], ZExp.CursorL(OnText(0), EmptyLine), []);
@@ -1049,7 +1075,7 @@ and syn_perform_line =
   | (Construct(_) | UpdateApPalette(_), CursorL(_)) => Failed
 
   /* Invalid swap actions */
-  | (SwapUp | SwapDown, CursorL(_) | LetLineZP(_) | TyAliasLineP(_)) => Failed
+  | (SwapUp | SwapDown, CursorL(_) | LetLineZP(_) | TyAliasLineP(_) | StructLineZP(_) | StructLineZE(_)) => Failed
   | (SwapLeft, CursorL(_))
   | (SwapRight, CursorL(_)) => Failed
 
@@ -1148,6 +1174,42 @@ and syn_perform_line =
         let body_ctx = Statics_Exp.extend_let_body_ctx(ctx, p, new_def);
         Succeeded(LineDone((([], new_zline, []), body_ctx, u_gen)));
       };
+    }
+  | (_, StructLineZP(zp, ann, def)) =>
+    // TODO (hejohns): what is going on here
+    switch (Statics_Exp.syn(ctx, def)) {
+    | None => Failed
+    | Some(ty_def) =>
+      switch (Action_Pat.ana_perform(ctx, u_gen, a, zp, ty_def)) {
+      | Failed => Failed
+      | CursorEscaped(side) => escape(u_gen, side)
+      | Succeeded((new_zp, new_ctx, u_gen)) =>
+        let (new_def, _, u_gen) = Statics_Exp.syn_fix_holes(ctx, u_gen, def);
+        Succeeded(
+          LineDone((
+            ([], ZExp.StructLineZP(new_zp, ann, new_def), []),
+            new_ctx,
+            u_gen,
+          )),
+        );
+      }
+    }
+  | (_, StructLineZE(p, ann, zdef)) =>
+    switch (Statics_Exp.syn(ctx, ZExp.erase(zdef))) {
+    | None => Failed
+    | Some(def_ty) =>
+      switch (syn_perform(ctx, a, (zdef, def_ty, u_gen))) {
+      | Failed => Failed
+      | CursorEscaped(side) => escape(u_gen, side)
+      | Succeeded((new_zdef, _, u_gen)) =>
+        Succeeded(
+          LineDone((
+            ([], ZExp.StructLineZE(p, ann, new_zdef), []),
+            ctx,
+            u_gen,
+          )),
+        )
+      }
     }
   | (Init, _) => failwith("Init action should not be performed.")
   };
@@ -1662,6 +1724,15 @@ and syn_perform_operand =
     )
   | (Construct(STyAlias), CursorE(_, EmptyHole(_))) =>
     Succeeded(mk_SynExpandsToTyAlias(~u_gen, ()))
+  | (Construct(SStruct), CursorE(_, operand)) =>
+    // TODO (hejohns): ?
+    Succeeded(
+      mk_SynExpandsToStruct(
+        ~u_gen,
+        ~def=UHExp.Block.wrap'(OpSeq.wrap(operand)),
+        (),
+      ),
+    )
   | (Construct(STyAlias), CursorE(_)) => Failed
   | (Construct(SAnn), CursorE(_)) => Failed
   | (Construct(SChar(s)), CursorE(_, EmptyHole(_))) =>
@@ -2320,6 +2391,11 @@ and ana_perform =
       );
     let new_ze = (prefix, zalias, suffix) |> ZExp.prune_empty_hole_lines;
     Succeeded(Statics_Exp.ana_fix_holes_z(ctx, u_gen, new_ze, ty));
+  | Succeeded(AnaExpands({kw: Struct, prefix, subject, suffix, u_gen})) =>
+    let (zp_hole, u_gen) = ZPat.new_EmptyHole(u_gen);
+    let zstruct = ZExp.StructLineZP(ZOpSeq.wrap(zp_hole), (), subject);
+    let new_zblock = (prefix, zstruct, suffix) |> ZExp.prune_empty_hole_lines;
+    Succeeded(Statics_Exp.ana_fix_holes_z(ctx, u_gen, new_zblock, ty));
   }
 and ana_perform_block =
     (
@@ -2450,7 +2526,9 @@ and ana_perform_block =
         | TyAliasLineP(_)
         | TyAliasLineT(_)
         | LetLineZP(_)
-        | LetLineZE(_) => Failed
+        | LetLineZE(_)
+        | StructLineZP(_)
+        | StructLineZE(_) => Failed
         | ExpLineZ(zopseq) =>
           switch (ana_perform_opseq(ctx_zline, a, (zopseq, u_gen), ty)) {
           | Failed => Failed
@@ -2929,6 +3007,7 @@ and ana_perform_operand =
 
   /* Invalid actions at the expression level */
   | (Construct(SList), CursorE(_)) => Failed
+  | (Construct(SStruct), CursorE(_)) => Failed // TODO (hejohns): ?
 
   /* Backspace & Delete */
 
