@@ -182,17 +182,52 @@ let rec mk_tuple = (~err: ErrStatus.t=NotInHole, elements: list(skel)): skel =>
   | [skel, ...skels] => BinOp(err, Comma, skel, mk_tuple(skels))
   };
 
+let rec extract_vars =
+        (~acc: list(Var.t)=[], l: block): option(list(Var.t)) =>
+  switch (l) {
+  | [ExpLine(_)] =>
+    acc
+    |> sexp_of_list(sexp_of_string)
+    |> Sexplib.Sexp.to_string
+    |> print_endline;
+    "###193###" |> print_endline;
+    List.length(acc) > 0 ? Some(acc) : None;
+  | [LetLine(p, _, _), ...tl] =>
+    switch (p) {
+    // TODO (hejohns): check error conditions?
+    | OpSeq(_, S(Var(_, NotInVarHole, name), E)) =>
+      acc
+      |> sexp_of_list(sexp_of_string)
+      |> Sexplib.Sexp.to_string
+      |> print_endline;
+      "###203###" |> print_endline;
+      extract_vars(~acc=acc @ [name], tl);
+    | _ => None
+    }
+  | _ => None
+  };
+
 let mk_struct_record = (l: list(Var.t)): line =>
   switch (l) {
   | [] => failwith("expected at least one element")
-  | [x, ...tl] =>
-    let seq_tl =
-      List.combine(
-        List.map(_ => Operators_Exp.Comma, tl),
-        List.map(x => Var(NotInHole, NotInVarHole, x), tl),
-      );
-    let seq = Seq.mk(Var(NotInHole, NotInVarHole, x), seq_tl);
-    let skel = Skel.mk(_ => 1, _ => Right, seq);
+  | [hd, ..._] =>
+    open Operators_Exp;
+    let rec build_seq_tl =
+            (op: operator, vars: list(Var.t)): list((operator, operand)) =>
+      switch (vars) {
+      | [] => []
+      | [hd, ...tl] =>
+        switch (op) {
+        | Space =>
+          [(Space, Var(NotInHole, NotInVarHole, hd))]
+          @ build_seq_tl(Comma, tl)
+        | Comma =>
+          [(Comma, Label(NotInLabelHole, hd))] @ build_seq_tl(Space, vars)
+        | _ => failwith("are you really trying to build a record?")
+        }
+      };
+    let seq = Seq.mk(Label(NotInLabelHole, hd), build_seq_tl(Space, l));
+    let skel = Skel.mk(precedence, associativity, seq);
     ExpLine(OpSeq(skel, seq));
   };
 

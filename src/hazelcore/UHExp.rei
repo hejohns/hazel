@@ -80,6 +80,8 @@ module Block: {
   let split_conclusion: block => option((list(line), opseq));
 };
 
+let extract_vars: (~acc: list(Var.t)=?, block) => option(list(Var.t));
+
 let mk_struct_record: list(Var.t) => line;
 
 let get_tuple_elements: skel => list(skel);

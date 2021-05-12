@@ -1,4 +1,4 @@
-//open Sexplib.Std;
+open Sexplib.Std;
 
 /* closed substitution [d1/x]d2*/
 let rec subst_var = (d1: DHExp.t, x: Var.t, d2: DHExp.t): DHExp.t =>
@@ -626,56 +626,33 @@ and syn_elab_line =
       }
     }
   | StructLine(p, _, def) =>
-    // TODO (hejohns): this is where we inject the record (I think...)
+    // TODO (hejohns): this is where we inject the record
     // see Program.re:111 -> 99
-    let rec mk_struct_record =
-            (~acc: list(Var.t)=[], def: UHExp.block): option(UHExp.line) =>
-      switch (def) {
-      | [] =>
-        if (List.length(acc) > 0) {
-          Some(UHExp.mk_struct_record(acc));
-        } else {
-          None;
-        }
-      | [LetLine(p, _, _), ...tl] =>
-        switch (p) {
-        | OpSeq(_, S(Var(_, NotInVarHole, x), E)) =>
-          mk_struct_record(~acc=acc @ [x], tl)
-        | _ => None
-        }
-      | _ => None
-      };
-    switch (mk_struct_record(def)) {
-    | None =>
-      /*
-       def
-       |> sexp_of_list(UHExp.sexp_of_line)
-       |> Sexplib.Sexp.to_string
-       |> print_endline;
-       LinesDoNotExpand;
-       */
-      switch (syn_elab(ctx, delta, def)) {
-      | DoesNotElaborate => LinesDoNotExpand
-      | Elaborates(_, ty1, delta) =>
-        switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
-        | DoesNotElaborate => LinesDoNotExpand
-        | Elaborates(dp, _, ctx, delta) =>
-          let prelude = d2 => DHExp.Struct(dp, (), d2);
-          LinesExpand(prelude, ctx, delta);
-        }
+    switch (UHExp.extract_vars(def)) {
+    | None => LinesExpand(d => d, ctx, delta)
+    | Some(vars) =>
+      if (List.length(def) > 0) {
+        let pre = def |> List.rev |> List.tl |> List.rev;
+        vars
+        |> sexp_of_list(sexp_of_string)
+        |> Sexplib.Sexp.to_string
+        |> print_endline;
+        assert(List.length(vars) > 0);
+        "###641###" |> print_endline;
+        let r = UHExp.mk_struct_record(vars);
+        "pre: " |> print_endline;
+        pre
+        |> sexp_of_list(UHExp.sexp_of_line)
+        |> Sexplib.Sexp.to_string
+        |> print_endline;
+        "r: " |> print_endline;
+        r |> UHExp.sexp_of_line |> Sexplib.Sexp.to_string |> print_endline;
+        let m = UHExp.LetLine(p, None, pre @ [r]);
+        syn_elab_line(ctx, delta, m);
+      } else {
+        LinesDoNotExpand;
       }
-    | Some(record) =>
-      switch (syn_elab(ctx, delta, def @ [record])) {
-      | DoesNotElaborate => LinesDoNotExpand
-      | Elaborates(_, ty1, delta) =>
-        switch (Elaborator_Pat.ana_elab(ctx, delta, p, ty1)) {
-        | DoesNotElaborate => LinesDoNotExpand
-        | Elaborates(dp, _, ctx, delta) =>
-          let prelude = d2 => DHExp.Struct(dp, (), d2);
-          LinesExpand(prelude, ctx, delta);
-        }
-      }
-    };
+    }
   }
 and syn_elab_opseq =
     (ctx: Contexts.t, delta: Delta.t, OpSeq(skel, seq): UHExp.opseq)

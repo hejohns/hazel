@@ -78,7 +78,7 @@ type t =
   | Cast(t, HTyp.t, HTyp.t)
   | FailedCast(t, HTyp.t, HTyp.t)
   | InvalidOperation(t, InvalidOperationError.t)
-  | Struct(DHPat.t, unit, t)
+  | Struct(DHPat.t, t, t) // Struct(name, def, expr)
 and case =
   | Case(t, list(rule), int)
 and rule =
