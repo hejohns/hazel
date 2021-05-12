@@ -12,6 +12,7 @@ and line =
   | LetLine(UHPat.t, t)
   | ExpLine(opseq)
   | TyAliasLine(TPat.t, UHTyp.t)
+  | StructLine(UHPat.t, unit, t)
 and opseq = OpSeq.t(operand, operator)
 and operand =
   | EmptyHole(MetaVar.t)
@@ -81,7 +82,8 @@ module Line = {
     | ExpLine(_)
     | EmptyLine
     | TyAliasLine(_)
-    | LetLine(_) => line
+    | LetLine(_)
+    | StructLine(_) => line
     };
 
   let get_opseq =
@@ -89,8 +91,11 @@ module Line = {
     | EmptyLine
     | CommentLine(_)
     | TyAliasLine(_)
-    | LetLine(_) => None
+    | LetLine(_)
+    | StructLine(_) => None
     | ExpLine(opseq) => Some(opseq);
+    ;
+
   let force_get_opseq = line =>
     line
     |> get_opseq
