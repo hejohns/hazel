@@ -13,6 +13,8 @@ and extract_from_zline = (zline: ZExp.zline): cursor_term => {
   | LetLineZE(_, zexp) => extract_cursor_term(zexp)
   | TyAliasLineP(zpat, _) => CursorInfo_TPat.extract_cursor_term(zpat)
   | TyAliasLineT(_, zty) => CursorInfo_Typ.extract_cursor_term(zty)
+  | StructLineZP(zpat, _, _) => CursorInfo_Pat.extract_cursor_term(zpat)
+  | StructLineZE(_, _, ze) => extract_cursor_term(ze)
   };
 }
 and extract_from_zexp_operand = (zexp_operand: ZExp.zoperand): cursor_term => {
@@ -66,6 +68,8 @@ and get_zoperand_from_zline = (zline: ZExp.zline): option(zoperand) => {
   | LetLineZE(_, zexp) => get_zoperand_from_zexp(zexp)
   | TyAliasLineP(zpat, _) => CursorInfo_TPat.get_zoperand_from_ztpat(zpat)
   | TyAliasLineT(_, zty) => CursorInfo_Typ.get_zoperand_from_ztyp(zty)
+  | StructLineZP(zpat, _, _) => CursorInfo_Pat.get_zoperand_from_zpat(zpat)
+  | StructLineZE(_, _, ze) => get_zoperand_from_zexp(ze)
   };
 }
 and get_zoperand_from_zexp_opseq = (zopseq: ZExp.zopseq): option(zoperand) => {
@@ -118,6 +122,8 @@ and get_outer_zrules_from_zline =
   | LetLineZE(_, zexp) => get_outer_zrules_from_zexp(zexp, outer_zrules)
   | TyAliasLineP(_) => outer_zrules
   | TyAliasLineT(_) => outer_zrules
+  | StructLineZP(_, _, _) => outer_zrules // TODO (hejohns): ?
+  | StructLineZE(_, _, ze) => get_outer_zrules_from_zexp(ze, outer_zrules)
   };
 }
 and get_outer_zrules_from_zexp_opseq =
@@ -226,6 +232,8 @@ let adjacent_is_emptyline = (exp: ZExp.t): (bool, bool) => {
       | LetLineZE(_)
       | TyAliasLineP(_)
       | TyAliasLineT(_) => true
+      | StructLineZP(_, _, _)
+      | StructLineZE(_, _, _) => failwith("TODO (hejohns): ?")
       }
     | Some((_, _)) => false
     };
@@ -242,6 +250,8 @@ let adjacent_is_emptyline = (exp: ZExp.t): (bool, bool) => {
       | LetLineZE(_)
       | TyAliasLineP(_)
       | TyAliasLineT(_) => false
+      | StructLineZP(_, _, _)
+      | StructLineZE(_, _, _) => failwith("TODO (hejohns): ?")
       }
     | _ => false
     };
@@ -337,6 +347,16 @@ and syn_cursor_info_line =
     // TODO: Are we actually on a deferred var pattern because it's a type variable?
     | Some(ci) => Some(CursorNotOnDeferredVarPat(ci))
     }
+  | StructLineZP(zp, _, def) =>
+    // TODO (hejohns): ?
+    let pat_ci = CursorInfo_Pat.ana_cursor_info(~steps=steps @ [0], ctx, zp);
+    switch (Statics_Exp.syn(ctx, def)) {
+    | None => None
+    | Some(ty1) => pat_ci(ty1)
+    };
+  | StructLineZE(_, _, zdef) =>
+    syn_cursor_info(~steps=steps @ [1], ctx, zdef)
+    |> Option.map(ci => CursorInfo_common.CursorNotOnDeferredVarPat(ci))
   }
 and syn_cursor_info_zopseq =
     (
@@ -647,6 +667,8 @@ and ana_cursor_info_zblock =
           zopseq,
           ty,
         )
+      | StructLineZP(_) => failwith("TODO (hejohns): 672")
+      | StructLineZE(_) => failwith("TODO (hejohns): 673")
       }
     | [_, ..._] =>
       switch (

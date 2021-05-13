@@ -106,6 +106,15 @@ and mk_block =
               Doc.annot(UHAnnot.OpenChild(Multiline), tl_doc),
             ),
           )
+        | StructLine(_) =>
+          // TODO (hejohns): ?
+          annot_SubBlock(
+            ~hd_index=offset + i,
+            Doc.vsep(
+              hd_doc,
+              Doc.annot(UHAnnot.OpenChild(Multiline), tl_doc),
+            ),
+          )
         },
       leading,
       last_doc,
@@ -149,6 +158,12 @@ and mk_line =
           let ty =
             UHDoc_Typ.mk_child(~memoize, ~enforce_inline, ~child_step=1, ty);
           UHDoc_common.mk_BindingLine(p, ty, UHDoc_common.BindingForm.Type);
+        | StructLine(p, _, def) =>
+          // TODO (hejohns): ?
+          let p =
+            UHDoc_Pat.mk_child(~memoize, ~enforce_inline, ~child_step=0, p);
+          let def = mk_child(~memoize, ~enforce_inline, ~child_step=1, def);
+>>>>>>> 8b57ed87 (builds but many TODOs)
         }: UHDoc.t
       )
     )
