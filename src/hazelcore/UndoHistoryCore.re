@@ -192,7 +192,8 @@ let cursor_term_len = (cursor_term: cursor_term): comp_len_typ => {
     | CommentLine(comment) => Len(String.length(comment))
     | LetLine(_)
     | TyAliasLine(_)
-    | ExpLine(_) => MaxLen
+    | ExpLine(_)
+    | StructLine(_) => MaxLen
     }
   };
 };
