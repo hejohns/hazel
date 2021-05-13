@@ -55,6 +55,12 @@ and find_uses_line = (~steps, x: Var.t, line: UHExp.line): (uses_list, bool) =>
       binds_var(x, p),
     )
   | TyAliasLine(_, _) => ([], false)
+  | StructLine(_) as strct =>
+    // TODO (hejohns): confused
+    switch (UHExp.desugar_struct(strct)) {
+    | Some(l) => find_uses_line(~steps, x, l)
+    | None => ([], false)
+    }
   }
 and find_uses_opseq =
     (~steps, x: Var.t, OpSeq(_, seq): UHExp.opseq): uses_list =>

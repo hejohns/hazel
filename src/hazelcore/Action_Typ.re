@@ -426,7 +426,7 @@ and syn_perform_operand =
       UpdateApPalette(_) |
       Construct(
         SAnn | SLet | STyAlias | SLine | SLam | SListNil | SInj(_) | SCase |
-        SApPalette(_) |
+        SApPalette(_) | SStruct |
         SCommentLine,
       ) |
       SwapUp |

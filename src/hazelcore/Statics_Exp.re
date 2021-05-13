@@ -71,6 +71,7 @@ and syn_line = (ctx: Contexts.t, line: UHExp.line): option(Contexts.t) =>
     let+ (hty, kind, _) = Elaborator_Typ.syn(ctx, Delta.empty, ty);
     Statics_TPat.matches(ctx, p, hty, kind);
   | StructLine(p, _, def) as strct =>
+  | StructLine(_) as strct =>
     print_endline("context vv");
     ctx |> Contexts.sexp_of_t |> Sexplib.Sexp.to_string |> print_endline;
     print_endline("^^");
