@@ -69,11 +69,11 @@ let eval_bin_float_op =
   };
 };
 
-let rec evaluate = (d: DHExp.t): result =>
+let rec evaluate = (~depth: int=0, d: DHExp.t): result =>
   switch (d) {
   | BoundVar(_) => InvalidInput(1)
   | Let(dp, d1, d2) =>
-    switch (evaluate(d1)) {
+    switch (evaluate(~depth, d1)) {
     | InvalidInput(msg) => InvalidInput(msg)
     | BoxedValue(d1)
     | Indet(d1) =>
@@ -83,10 +83,16 @@ let rec evaluate = (d: DHExp.t): result =>
       | Matches(env) => evaluate(Elaborator_Exp.subst(env, d2))
       }
     }
-  | FixF(x, _, d1) => evaluate(Elaborator_Exp.subst_var(d, x, d1))
+  | FixF(x, _, d1) =>
+    if (depth > 100) {
+      // magic
+      InvalidInput(0);
+    } else {
+      evaluate(Elaborator_Exp.subst_var(d, x, d1));
+    }
   | Lam(_, _, _) => BoxedValue(d)
   | Ap(d1, d2) =>
-    switch (evaluate(d1)) {
+    switch (evaluate(~depth, d1)) {
     | InvalidInput(msg) => InvalidInput(msg)
     | BoxedValue(Lam(dp, _, d3)) =>
       switch (evaluate(d2)) {
@@ -98,7 +104,7 @@ let rec evaluate = (d: DHExp.t): result =>
         | Indet => Indet(d)
         | Matches(env) =>
           /* beta rule */
-          evaluate(Elaborator_Exp.subst(env, d3))
+          evaluate(~depth=depth + 1, Elaborator_Exp.subst(env, d3))
         }
       }
     | BoxedValue(Cast(d1', Arrow(ty1, ty2), Arrow(ty1', ty2')))
@@ -108,7 +114,7 @@ let rec evaluate = (d: DHExp.t): result =>
       | BoxedValue(d2')
       | Indet(d2') =>
         /* ap cast rule */
-        evaluate(Cast(Ap(d1', Cast(d2', ty1', ty1)), ty2, ty2'))
+        evaluate(~depth, Cast(Ap(d1', Cast(d2', ty1', ty1)), ty2, ty2'))
       }
     | BoxedValue(_) => InvalidInput(2)
     | Indet(d1') =>
@@ -226,7 +232,7 @@ let rec evaluate = (d: DHExp.t): result =>
   | Keyword(_) => Indet(d)
   | InvalidText(_) => Indet(d)
   | Cast(d1, ty, ty') =>
-    switch (evaluate(d1)) {
+    switch (evaluate(~depth, d1)) {
     | InvalidInput(msg) => InvalidInput(msg)
     | BoxedValue(d1') as result =>
       switch (ground_cases_of(ty), ground_cases_of(ty')) {
