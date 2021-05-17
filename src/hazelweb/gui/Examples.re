@@ -356,6 +356,9 @@ let rec qsort_n = (n: int): UHExp.t =>
     ];
   };
 
+let local: UHExp.t =
+  __HAZEL_LOCAL__ |> Sexplib.Sexp.of_string |> UHExp.t_of_sexp;
+
 [@deriving sexp]
 type id = string;
 let examples =
@@ -370,5 +373,6 @@ let examples =
     |> add("qsort_example_10", qsort_n(10))
     |> add("qsort_example_30", qsort_n(30))
     |> add("qsort_example_100", qsort_n(100))
+    |> add("local", local)
   );
 let get = id => StringMap.find(id, examples);

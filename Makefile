@@ -10,8 +10,11 @@ change-deps:
 	opam switch export opam.export
 
 dev:
+	cp src/hazelweb/gui/Examples.re src/hazelweb/gui/.Examples.re.swp
+	perl -pi -e 'BEGIN{$$local = $$ENV{HAZEL_LOCAL};} s/__HAZEL_LOCAL__/"$$local"/g' src/hazelweb/gui/Examples.re
 	dune build @src/fmt --auto-promote || true
-	dune build src --profile dev
+	dune build src --profile dev || true
+	cp src/hazelweb/gui/.Examples.re.swp src/hazelweb/gui/Examples.re
 
 release:
 	dune build src --profile release

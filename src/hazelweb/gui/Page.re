@@ -37,6 +37,7 @@ let examples_select = (~inject: ModelAction.t => Vdom.Event.t) =>
           [Attr.value("qsort_example_100")],
           [Node.text("qsort (100x)")],
         ),
+        Node.option([Attr.value("local")], [Node.text("local")]),
       ],
     )
   );
