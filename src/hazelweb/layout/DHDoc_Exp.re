@@ -247,13 +247,13 @@ let rec mk =
                ),
             DHDoc_common.Delim.mk("="),
             DHDoc_Typ.mk(ty)
-              |> DHDoc_common.pad_child(
+            |> DHDoc_common.pad_child(
                  ~inline_padding=(space(), space()),
                  ~enforce_inline=false,
                ),
             DHDoc_common.Delim.mk(":"),
             DHDoc_Kind.mk(k)
-              |> DHDoc_common.pad_child(
+            |> DHDoc_common.pad_child(
                  ~inline_padding=(space(), space()),
                  ~enforce_inline,
                ),
@@ -261,7 +261,8 @@ let rec mk =
           ]),
           mk_cast(go(~enforce_inline=false, dbody)),
         ])
-      | FailedCast(ctx, Cast(_, d, ty1, ty2), ty2', ty3) when Construction.HTyp.equiv(ctx, ty2, ty2') =>
+      | FailedCast(ctx, Cast(_, d, ty1, ty2), ty2', ty3)
+          when Construction.HTyp.equiv(ctx, ty2, ty2') =>
         let (d_doc, _) = go'(d);
         let cast_decoration =
           hcats([

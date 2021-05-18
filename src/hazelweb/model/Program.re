@@ -68,7 +68,8 @@ let get_decoration_paths = (program: t): UHDecorationPaths.t => {
     |> List.filter_map((CursorPath.{sort, steps}) =>
          switch (sort) {
          | TyVarHole => Some((CursorPath.VarErr, steps))
-         | TypHole | TPatHole => None
+         | TypHole
+         | TPatHole => None
          | PatHole(_, shape)
          | ExpHole(_, shape) =>
            switch (shape) {
