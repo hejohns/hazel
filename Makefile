@@ -9,7 +9,12 @@ deps:
 change-deps:
 	opam switch export opam.export
 
+ifndef HAZEL_LOCAL
+HAZEL_LOCAL:=((ExpLine(OpSeq(Placeholder 0)(S(EmptyHole 0)E))))
+export HAZEL_LOCAL
+endif
 dev:
+	echo $$HAZEL_LOCAL
 	cp src/hazelweb/gui/Examples.re src/hazelweb/gui/.Examples.re.swp
 	perl -pi -e 'BEGIN{$$local = $$ENV{HAZEL_LOCAL};} s/__HAZEL_LOCAL__/"$$local"/g' src/hazelweb/gui/Examples.re
 	dune build @src/fmt --auto-promote || true
