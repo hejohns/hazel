@@ -94,7 +94,6 @@ module Line = {
     | LetLine(_)
     | StructLine(_) => None
     | ExpLine(opseq) => Some(opseq);
-    ;
 
   let force_get_opseq = line =>
     line

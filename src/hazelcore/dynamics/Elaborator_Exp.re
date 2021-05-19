@@ -575,6 +575,7 @@ and syn_elab_line =
       let ctx2 = Statics_TPat.matches(ctx, p, hty, kind);
       let prelude = d => DHExp.TyAlias(p, hty, kind, d);
       LinesExpand(prelude, ctx2, delta);
+    }
   | StructLine(_) as strct =>
     // TODO (hejohns): this is where we inject the record
     // see Program.re:111 -> 99

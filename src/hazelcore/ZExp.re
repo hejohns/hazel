@@ -638,8 +638,11 @@ and move_cursor_left_zline = (zline: zline): option(zline) =>
     Some(CursorL(OnDelim(0, After), line))
   | CursorL(OnText(k), CommentLine(_) as line) =>
     Some(CursorL(OnText(k - 1), line))
-  | CursorL(OnText(_), ExpLine(_) | LetLine(_) | TyAliasLine(_))
-  | CursorL(OnText(_), ExpLine(_) | LetLine(_) | StructLine(_)) => None
+  | CursorL(
+      OnText(_),
+      ExpLine(_) | LetLine(_) | TyAliasLine(_) | StructLine(_),
+    ) =>
+    None
 
   | CursorL(OnDelim(_), EmptyLine | CommentLine(_) | ExpLine(_)) => None
   | CursorL(OnDelim(k, After), line) =>
@@ -653,6 +656,7 @@ and move_cursor_left_zline = (zline: zline): option(zline) =>
     switch (k) {
     | 1 => Some(TyAliasLineP(ZTPat.place_after(p), ty))
     | _ => Some(TyAliasLineT(p, ZTyp.place_after(ty)))
+    }
   | CursorL(OnDelim(k, Before), StructLine(p, ann, def)) =>
     switch (k) {
     | 1 => Some(StructLineZP(ZPat.place_after(p), ann, def))
@@ -852,8 +856,10 @@ and move_cursor_right_zline =
   | CursorL(OnOp(_), _) => None
   | CursorL(OnText(k), CommentLine(_) as line) =>
     Some(CursorL(OnText(k + 1), line))
-  | CursorL(OnText(_), EmptyLine | ExpLine(_) | LetLine(_) | TyAliasLine(_)) =>
-  | CursorL(OnText(_), EmptyLine | ExpLine(_) | LetLine(_) | StructLine(_)) =>
+  | CursorL(
+      OnText(_),
+      EmptyLine | ExpLine(_) | LetLine(_) | TyAliasLine(_) | StructLine(_),
+    ) =>
     None
   | CursorL(OnDelim(k, Before), line) =>
     Some(CursorL(OnDelim(k, After), line))
@@ -873,6 +879,7 @@ and move_cursor_right_zline =
     | 0 => Some(TyAliasLineP(ZTPat.place_before(p), ty))
     | 1 => Some(TyAliasLineT(p, ZTyp.place_before(ty)))
     | _ => None
+    }
   | CursorL(OnDelim(k, After), StructLine(p, ann, def)) =>
     switch (k) {
     | 0 => Some(StructLineZP(ZPat.place_before(p), ann, def))

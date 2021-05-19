@@ -70,7 +70,6 @@ and syn_line = (ctx: Contexts.t, line: UHExp.line): option(Contexts.t) =>
   | TyAliasLine(p, ty) =>
     let+ (hty, kind, _) = Elaborator_Typ.syn(ctx, Delta.empty, ty);
     Statics_TPat.matches(ctx, p, hty, kind);
-  | StructLine(p, _, def) as strct =>
   | StructLine(_) as strct =>
     let* desugared = UHExp.desugar_struct'(strct);
     syn_line(ctx, desugared);

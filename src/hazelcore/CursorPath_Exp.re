@@ -70,8 +70,10 @@ and follow_line =
   switch (steps, line) {
   | (_, ExpLine(opseq)) =>
     follow_opseq(path, opseq) |> Option.map(zopseq => ZExp.ExpLineZ(zopseq))
-  | ([], EmptyLine | LetLine(_) | CommentLine(_) | TyAliasLine(_) | StructLine(_)) =>
-  ) =>
+  | (
+      [],
+      EmptyLine | LetLine(_) | CommentLine(_) | TyAliasLine(_) | StructLine(_),
+    ) =>
     line |> ZExp.place_cursor_line(cursor)
   | ([_, ..._], EmptyLine | CommentLine(_)) => None
   | ([x, ...xs], LetLine(p, def)) =>
@@ -256,7 +258,10 @@ and of_steps_line =
     : option(CursorPath.t) =>
   switch (steps, line) {
   | (_, ExpLine(opseq)) => of_steps_opseq(steps, ~side, opseq)
-  | ([], EmptyLine | LetLine(_) | CommentLine(_) | TyAliasLine(_) | StructLine(_)) =>
+  | (
+      [],
+      EmptyLine | LetLine(_) | CommentLine(_) | TyAliasLine(_) | StructLine(_),
+    ) =>
     let place_cursor =
       switch (side) {
       | Before => ZExp.place_before_line

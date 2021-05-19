@@ -653,6 +653,7 @@ let rec syn_perform =
         OpSeq.wrap(UHTyp.Hole(u)),
       );
     let new_ze = (prefix, zalias, suffix) |> ZExp.prune_empty_hole_lines;
+    Succeeded(Statics_Exp.syn_fix_holes_z(ctx, u_gen, new_ze));
   | Succeeded(SynExpands({kw: Struct, prefix, subject, suffix, u_gen})) =>
     let (zp_hole, u_gen) = ZPat.new_EmptyHole(u_gen);
     let zstruct = ZExp.StructLineZP(ZOpSeq.wrap(zp_hole), (), subject);
@@ -882,7 +883,10 @@ and syn_perform_line =
   | (
       _,
       CursorL(OnDelim(_) | OnOp(_), EmptyLine) |
-      CursorL(OnText(_) | OnOp(_), LetLine(_) | TyAliasLine(_) | StructLine(_)) |
+      CursorL(
+        OnText(_) | OnOp(_),
+        LetLine(_) | TyAliasLine(_) | StructLine(_),
+      ) |
       CursorL(OnOp(_), CommentLine(_)) |
       CursorL(_, ExpLine(_)),
     ) =>
@@ -977,6 +981,7 @@ and syn_perform_line =
       let zty = k == 2 ? ty |> ZTyp.place_after : ty |> ZTyp.place_before;
       let new_zblock = ([], ZExp.TyAliasLineT(p, zty), []);
       fix_and_mk_result(u_gen, new_zblock);
+    }
   | (Backspace, CursorL(OnDelim(k, After), StructLine(p, ann, def))) =>
     // TODO (hejohns): what do you actually want to do here??
     switch (k) {
@@ -1075,7 +1080,12 @@ and syn_perform_line =
   | (Construct(_) | UpdateApPalette(_), CursorL(_)) => Failed
 
   /* Invalid swap actions */
-  | (SwapUp | SwapDown, CursorL(_) | LetLineZP(_) | TyAliasLineP(_) | StructLineZP(_) | StructLineZE(_)) => Failed
+  | (
+      SwapUp | SwapDown,
+      CursorL(_) | LetLineZP(_) | TyAliasLineP(_) | StructLineZP(_) |
+      StructLineZE(_),
+    ) =>
+    Failed
   | (SwapLeft, CursorL(_))
   | (SwapRight, CursorL(_)) => Failed
 
