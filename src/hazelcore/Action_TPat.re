@@ -72,6 +72,7 @@ let rec perform = (a: Action.t, zp: ZTPat.t): ActionOutcome.t(ZTPat.t) =>
         STyAlias |
         SApPalette(_) |
         SList |
+        SStruct |
         SParenthesized,
       ) |
       SwapUp |

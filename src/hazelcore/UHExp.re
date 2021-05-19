@@ -307,8 +307,7 @@ let rec is_complete_line = (l: line): bool => {
   | LetLine(pat, body) => UHPat.is_complete(pat) && is_complete(body)
   | TyAliasLine(tpat, ty) => TPat.is_complete(tpat) && UHTyp.is_complete(ty)
   | ExpLine(body) => OpSeq.is_complete(is_complete_operand, body)
-  | StructLine(p, _, def) =>
-    UHPat.is_complete(p) && is_complete(def, check_type_holes)
+  | StructLine(p, _, def) => UHPat.is_complete(p) && is_complete(def)
   };
 }
 and is_complete_block = (b: block): bool => {
@@ -353,3 +352,6 @@ and is_complete_operand = (operand: 'operand): bool => {
 and is_complete = (exp: t): bool => {
   is_complete_block(exp);
 };
+
+let desugar_struct = _ => None;
+let desugar_struct' = _ => None;
